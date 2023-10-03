@@ -1,1 +1,1 @@
-# BooStoreApp
+Sample Backend for fictional BookStore

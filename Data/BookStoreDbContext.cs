@@ -1,4 +1,6 @@
 ﻿using BooStoreApp.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Hosting;
@@ -6,7 +8,7 @@ using System.Reflection.Metadata;
 
 namespace BooStoreApp.Data
 {
-    public class BookStoreDbContext:DbContext
+    public class BookStoreDbContext: IdentityDbContext<IdentityUser>
     {
 
         public DbSet<Genre> Genres { get; set; }
@@ -21,6 +23,9 @@ namespace BooStoreApp.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<IdentityUserLogin<string>>()
+            .HasKey(e => new { e.LoginProvider, e.ProviderKey });
             modelBuilder.Entity<AuthorBook>()
                 .HasKey(ab => new { ab.AuthorId, ab.BookId });
 
@@ -34,13 +39,5 @@ namespace BooStoreApp.Data
                 .WithMany(c => c.AuthorBooks)
                 .HasForeignKey(ab => ab.BookId);
         }
-
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    /* TODO: Move to Startup and read from appsettings.json*/
-        //    optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SchoolDB;Trusted_Connection=True;");
-        //}
-
-
     }
 }

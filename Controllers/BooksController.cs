@@ -10,6 +10,8 @@ using BooStoreApp.Models;
 using BooStoreApp.Utils;
 using BooStoreApp.DTO;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
+using BooStoreApp.Constants;
 
 namespace BooStoreApp.Controllers
 {
@@ -26,6 +28,7 @@ namespace BooStoreApp.Controllers
 
         // GET: api/Books
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Book>>> GetBooks([FromQuery] PaginationFilter filter)
         {
             if(_context.Books == null)
@@ -52,6 +55,7 @@ namespace BooStoreApp.Controllers
         
         
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<Book>> PostBook([FromBody]BookDTO bookdto)
         {
             if (!ModelState.IsValid)
@@ -74,22 +78,24 @@ namespace BooStoreApp.Controllers
 
         [HttpGet]
         [Route("filtered")]
+        [Authorize]
         public async Task<IActionResult> GetBooksFiltered([FromQuery] BookFilter filter)
         {
             var param1 = filter.Genre;
             var param2 = filter.Author;
 
-            var books =   _context.Books
+            var books =  await  _context.Books
                 .FromSqlRaw($"EXECUTE dbo.GetFilteredBlogs @genre, @author", 
                 new SqlParameter("@genre",  string.IsNullOrEmpty(param1) ? DBNull.Value:  param1 ),
                 new SqlParameter("@author", string.IsNullOrEmpty(param2) ? DBNull.Value : param2))
-                .ToList();
+                .ToListAsync();
             return Ok(books);
         }
 
 
         // DELETE: api/Books/5
         [HttpDelete("{id}")]
+        [Authorize(Roles=UserRoles.Admin)]
         public async Task<IActionResult> DeleteBook(int id)
         {
             if (_context.Books == null)

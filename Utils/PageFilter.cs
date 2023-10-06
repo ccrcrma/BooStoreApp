@@ -7,7 +7,7 @@
         public PaginationFilter()
         {
             this.PageNumber = 1;
-            this.PageSize = 10;
+            this.PageSize = 5;
         }
         public PaginationFilter(int pageNumber, int pageSize)
         {

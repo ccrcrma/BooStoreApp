@@ -11,6 +11,7 @@ namespace BooStoreApp
     {
         public static void Main(string[] args)
         {
+            var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
             var builder = WebApplication.CreateBuilder(args);
            
             ConfigurationManager configuration = builder.Configuration;
@@ -21,6 +22,8 @@ namespace BooStoreApp
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddCors(p => p.AddPolicy(MyAllowSpecificOrigins, 
+                    build => build.WithOrigins("http://localhost:3001", "http://localhost:3000").AllowAnyHeader().AllowAnyMethod()));
             builder.Services.AddDbContext<BookStoreDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("BookStoreConnection")));
             // For Identity
@@ -60,7 +63,8 @@ namespace BooStoreApp
             }
 
             app.UseHttpsRedirection();
-
+            app.UseRouting();
+            app.UseCors(MyAllowSpecificOrigins);
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();

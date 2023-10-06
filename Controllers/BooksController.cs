@@ -17,6 +17,7 @@ namespace BooStoreApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BooksController : ControllerBase
     {
         private readonly BookStoreDbContext _context;
@@ -28,7 +29,6 @@ namespace BooStoreApp.Controllers
 
         // GET: api/Books
         [HttpGet]
-        [Authorize]
         public async Task<ActionResult<IEnumerable<Book>>> GetBooks([FromQuery] PaginationFilter filter)
         {
             if(_context.Books == null)
@@ -55,7 +55,6 @@ namespace BooStoreApp.Controllers
         
         
         [HttpPost]
-        [Authorize]
         public async Task<ActionResult<Book>> PostBook([FromBody]BookDTO bookdto)
         {
             if (!ModelState.IsValid)
@@ -70,6 +69,7 @@ namespace BooStoreApp.Controllers
             var genre = await _context.Genres.FirstOrDefaultAsync(g => g.GenreId == bookdto.GenreId);
             if (genre == null)
                 return BadRequest(new { IsSucess = false, message = "Please  enter appropriate genre" });
+            book.BookGenre = genre;
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
             return Ok(book);
@@ -78,7 +78,7 @@ namespace BooStoreApp.Controllers
 
         [HttpGet]
         [Route("filtered")]
-        [Authorize]
+       
         public async Task<IActionResult> GetBooksFiltered([FromQuery] BookFilter filter)
         {
             var param1 = filter.Genre;
@@ -121,13 +121,16 @@ namespace BooStoreApp.Controllers
 
         // GET: api/Books/5
         [HttpGet("{id}")]
+        
         public async Task<ActionResult<Book>> GetBook(int id)
         {
             if (_context.Books == null)
             {
                 return NotFound();
             }
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books.Include(b => b.BookGenre)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.BookId == id);
 
             if (book == null)
             {
@@ -140,15 +143,23 @@ namespace BooStoreApp.Controllers
         // PUT: api/Books/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBook(int id, Book book)
+        public async Task<IActionResult> PutBook(int id, BookCreateDTO bookDto)
         {
-            if (id != book.BookId)
+            if (id != bookDto.Id)
             {
                 return BadRequest();
             }
+            // TODO: Automapper
+            var book = new Book()
+            {
+                BookId = bookDto.Id,
+                Title = bookDto.Title,
+                PublishedDate = bookDto.PublishedDate,
+            };
 
+            var genre =  await _context.Genres.FindAsync(bookDto.GenreId);
             _context.Entry(book).State = EntityState.Modified;
-
+            book.BookGenre = genre;
             try
             {
                 await _context.SaveChangesAsync();
